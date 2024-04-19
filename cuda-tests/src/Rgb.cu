@@ -9,21 +9,21 @@ public:
 	int g;
 	int b;
 
-	Rgb()
+	__host__ __device__ Rgb()
 	{
 		r = 0;
 		g = 0;
 		b = 0;
 	}
 
-	__host__ Rgb(int r, int g, int b, bool placeholder)
+	__host__ __device__ Rgb(int r, int g, int b, bool placeholder)
 	{
 		this->r = r;
 		this->g = g;
 		this->b = b;
 	}
 
-	__device__ Rgb(int r, int g, int b)
+	__host__ __device__ Rgb(int r, int g, int b)
 	{
 		this->r = r;
 		this->g = g;

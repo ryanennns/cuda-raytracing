@@ -30,12 +30,12 @@ public:
         this->z = z;
     }
 
-    __host__ double magnitude()
+    __host__ __device__ double magnitude()
     {
-        return std::sqrt(x * x + y * y + z * z);
+        return sqrt(x * x + y * y + z * z);
     }
 
-    __host__ Vector3D normalize()
+    __host__ __device__ Vector3D normalize()
     {
         double magnitude = this->magnitude();
 
@@ -91,13 +91,13 @@ public:
         );
     }
 
-    __host__ double distanceBetween(const Vector3D& v)
+    __host__ __device__ double distanceBetween(const Vector3D& v)
     {
         double x = v.x - this->x;
         double y = v.y - this->y;
         double z = v.z - this->z;
 
-        return std::sqrt(x * x + y * y + z * z);
+        return sqrt(x * x + y * y + z * z);
     }
 
     __host__ void consoleDisplay()
