@@ -7,8 +7,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Vector3D.cu" />
+    <ClCompile Include="src\HitDetection.cu" />
+    <ClCompile Include="src\ViewPort.cu" />
+    <ClCompile Include="src\Rgb.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Vector3D.h" />
+    <ClInclude Include="kernel.h" />
   </ItemGroup>
 </Project>

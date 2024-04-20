@@ -5,9 +5,9 @@
 class Ray
 {
 private:
+public:
 	Vector3D A;
 	Vector3D B;
-public:
 	__host__ __device__ Ray()
 	{
 		this->A = Vector3D(0, 0, 0);

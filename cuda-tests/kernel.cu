@@ -1,52 +1,134 @@
-﻿#include "cuda_runtime.h"
+﻿#include <SDL.h>
+#undef main
+#include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include <stdio.h>
+#include <chrono>
 
+#include "src/HitDetection.cu"
 #include "src/Vector3D.cu"
+#include "src/Triangle.cu"
 #include "src/Rgb.cu"
+#include "src/Ray.cu"
+#include "src/ViewPort.cu"
 
 const int N = 3;
 
-__global__ void kernel(Vector3D* A, Vector3D* B) {
-    int idx = threadIdx.x;
+void set_pixel(SDL_Surface* surface, int x, int y, Rgb& color)
+{
+    if (x >= 0 && x < surface->w && y >= 0 && y < surface->h) {
+        Uint32* pixels = (Uint32*)surface->pixels;
+        Uint32 pixelColor = SDL_MapRGB(
+            surface->format,
+            color.getRed(),
+            color.getGreen(),
+            color.getBlue()
+        );
 
-
-    B[idx].x = A[idx].x * 2.0;
-    B[idx].y = A[idx].y * 2.0;
-    B[idx].z = A[idx].z * 2.0;
-
-    printf("%d:  %.2lf, %.2lf, %.2lf\n", idx, B[idx].x, B[idx].y, B[idx].z);
+        pixels[(y * surface->w) + x] = pixelColor;
+    }
 }
 
-int main() {
-    Vector3D A[N] = {Vector3D(1,1,1), Vector3D(2,2,2), Vector3D(3,3,3)};
-    Vector3D B[N];
+void cleanup(SDL_Window* window)
+{
+    SDL_DestroyWindow(window);
 
-    Vector3D tester = Vector3D();
+    SDL_Quit();
+}
 
-    Vector3D* d_A = nullptr;
-    Vector3D* d_B = nullptr;
+__global__ void _processRow(Ray* rays, Triangle* triangle, HitDetection* hitDetection)
+{
+    int idx = threadIdx.x;
 
-    cudaMalloc(&d_A, sizeof(A));
-    cudaMalloc(&d_B, sizeof(B));
+    hitDetection[idx] = triangle->intersections(rays[idx]);
+}
 
-    cudaMemcpy(d_A, A, sizeof(A), cudaMemcpyHostToDevice);
+void renderRow(HitDetection* hitDetections, int index, SDL_Surface* screen)
+{
+    for (int i = 0; i < WIDTH; i++) {
+        if (hitDetections[i].hit)
+        {
+            set_pixel(screen, index, i, Rgb(255, 0, 0));
+        }
+        else
+        {
+            set_pixel(screen, index, i, Rgb(255, 255, 255));
+        }
+    }
+}
 
-    kernel<<<1, N>>> (d_A, d_B);
+HitDetection* processRow(Ray** rays, Triangle triangle, int index)
+{
+    HitDetection hitDetections[WIDTH];
+    Ray* rayRow = rays[index];
+
+    HitDetection* d_hitDetections = nullptr;
+    Triangle* d_triangle = nullptr;
+    Ray* d_rays = nullptr;
+
+    cudaMalloc(&d_rays, HEIGHT * sizeof(Ray));
+    cudaMalloc(&d_hitDetections, sizeof(hitDetections));
+    cudaMalloc(&d_triangle, sizeof(triangle));
+
+    cudaMemcpy(d_rays, rayRow, HEIGHT * sizeof(Ray), cudaMemcpyHostToDevice);
+    cudaMemcpy(hitDetections, d_hitDetections, sizeof(hitDetections), cudaMemcpyDeviceToHost);
+    cudaMemcpy(d_triangle, &triangle, sizeof(triangle), cudaMemcpyHostToDevice);
+
+    _processRow <<<1, WIDTH >>> (d_rays, d_triangle, d_hitDetections);
 
     cudaDeviceSynchronize();
 
-    cudaMemcpy(B, d_B, sizeof(B), cudaMemcpyDeviceToHost);
+    cudaMemcpy(hitDetections, d_hitDetections, sizeof(hitDetections), cudaMemcpyDeviceToHost);
+    cudaFree(d_rays);
+    cudaFree(d_hitDetections);
+    cudaFree(d_triangle);
 
-    for (int i = 0; i < N; i++) {
-        printf("\n");
-		printf("%d.x:  %.2lf\n", i, B[i].x);
-		printf("%d.y:  %.2lf\n", i, B[i].y);
-		printf("%d.z:  %.2lf\n", i, B[i].z);
-	}
+    return hitDetections;
+}
 
-    cudaFree(d_A);
-    cudaFree(d_B);
+int main()
+{
+    SDL_Window* window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+    SDL_Surface* screenSurface = SDL_GetWindowSurface(window);
+
+    //=================================================================
+
+    ViewPort v = ViewPort();
+    Ray** rays = v.generateRays();
+    Triangle triangle = Triangle(
+        Vector3D(5, 0, 10),
+        Vector3D(-5, 5, 10),
+        Vector3D(-5, -5, 10)
+    );
+
+    while (true)
+    {
+        triangle.translate(Vector3D(0, 0.1, 0));
+        auto start = std::chrono::high_resolution_clock::now();
+
+        for (int x = 0; x < WIDTH; x++)
+        {
+            HitDetection* hd = processRow(rays, triangle, x);
+            renderRow(hd, x, screenSurface);
+            SDL_UpdateWindowSurface(window);
+        }
+
+        auto finish = std::chrono::high_resolution_clock::now();
+        int ms = (int)std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
+        printf("FPS: %lf\n", 1 / (ms * 0.001));
+    }
+
+    SDL_Event e;
+    bool quit = false;
+    while (quit == false)
+    {
+        while (SDL_PollEvent(&e))
+        {
+            if (e.type == SDL_QUIT) {
+                quit = true;
+            }
+        }
+    }
 
     return 0;
 }

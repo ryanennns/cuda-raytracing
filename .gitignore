@@ -1,0 +1,20 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/cuda-tests
+/cuda-tests/x64/Debug/cuda-tests.Build.CppClean.log
+/cuda-tests/x64/Debug/cuda-tests.ilk
+/cuda-tests/x64/Debug/cuda-tests.log
+/cuda-tests/x64/Debug/HitDetection.obj
+/cuda-tests/x64/Debug/kernel.cu-1503592605.deps
+/cuda-tests/x64/Debug/kernel.cu.obj
+/cuda-tests/x64/Debug/Ray.cu.obj
+/cuda-tests/x64/Debug/Rgb.obj
+/cuda-tests/x64/Debug/Triangle.cu.obj
+/cuda-tests/x64/Debug/Triangle.cu1212773164.deps
+/cuda-tests/x64/Debug/vc143.idb
+/cuda-tests/x64/Debug/vc143.pdb
+/cuda-tests/x64/Debug/Vector3D.obj
+/cuda-tests/x64/Debug/ViewPort.obj
+/x64/Debug

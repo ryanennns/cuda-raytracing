@@ -5,6 +5,7 @@
 #include "Vector3D.cu"
 #include "Ray.cu"
 #include "Rgb.cu"
+#include "HitDetection.cu"
 
 class Triangle
 {
@@ -89,16 +90,14 @@ public:
 		return normal;
 	}
 
-	__host__ __device__ Vector3D intersections(Ray ray)
+	__host__ __device__ HitDetection intersections(Ray ray)
 	{
 		//const double epsilon = 1e-12;
-		Vector3D returnVector = Vector3D();
-
 		Vector3D normal = this->normal();
 		double NdotRayDirection = normal.dotProduct(ray.getDirection());
 
 		if (NdotRayDirection == 0.0) {
-			return returnVector;
+			return HitDetection();
 		}
 
 		double d = -normal.dotProduct(this->getA());
@@ -111,10 +110,10 @@ public:
 			&& t > 0
 			&& this->verifyIntersection(planeIntersection, ray.getOrigin())
 			) {
-			return planeIntersection;
+			return HitDetection(planeIntersection);
 		}
 
-		return returnVector;
+		return HitDetection();
 	}
 
 	__host__ __device__ bool isPointInTriangle(Vector3D point)
