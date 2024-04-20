@@ -18,3 +18,5 @@
 /cuda-tests/x64/Debug/Vector3D.obj
 /cuda-tests/x64/Debug/ViewPort.obj
 /x64/Debug
+/.vs/cuda-raytracing/v17
+/cuda-tests/x64/Debug

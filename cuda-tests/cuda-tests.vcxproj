@@ -13,6 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BEBA7050-5108-44A4-9BA2-BFED4E4CC365}</ProjectGuid>
     <RootNamespace>cuda_tests</RootNamespace>
+    <ProjectName>cuda-raytracing</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">

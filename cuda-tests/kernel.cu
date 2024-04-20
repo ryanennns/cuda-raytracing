@@ -12,8 +12,6 @@
 #include "src/Ray.cu"
 #include "src/ViewPort.cu"
 
-const int N = 3;
-
 void set_pixel(SDL_Surface* surface, int x, int y, Rgb& color)
 {
     if (x >= 0 && x < surface->w && y >= 0 && y < surface->h) {
