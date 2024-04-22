@@ -34,7 +34,7 @@ void cleanup(SDL_Window* window)
     SDL_Quit();
 }
 
-__global__ void _processRow(Ray* rays, Triangle* triangle, HitDetection* hitDetection)
+__global__ void _processColumn(Ray* rays, Triangle* triangle, HitDetection* hitDetection)
 {
     int idx = threadIdx.x;
 
@@ -43,21 +43,17 @@ __global__ void _processRow(Ray* rays, Triangle* triangle, HitDetection* hitDete
 
 void renderRow(HitDetection* hitDetections, int index, SDL_Surface* screen)
 {
-    for (int i = 0; i < WIDTH; i++) {
+    for (int i = 0; i < HEIGHT; i++) {
         if (hitDetections[i].hit)
-        {
             set_pixel(screen, index, i, Rgb(255, 0, 0));
-        }
         else
-        {
             set_pixel(screen, index, i, Rgb(255, 255, 255));
-        }
     }
 }
 
-HitDetection* processRow(Ray** rays, Triangle triangle, int index)
+HitDetection* processColumn(Ray** rays, Triangle triangle, int index)
 {
-    HitDetection hitDetections[WIDTH];
+    HitDetection* hitDetections = new HitDetection[HEIGHT];
     Ray* rayRow = rays[index];
 
     HitDetection* d_hitDetections = nullptr;
@@ -65,23 +61,44 @@ HitDetection* processRow(Ray** rays, Triangle triangle, int index)
     Ray* d_rays = nullptr;
 
     cudaMalloc(&d_rays, HEIGHT * sizeof(Ray));
-    cudaMalloc(&d_hitDetections, sizeof(hitDetections));
+    cudaMalloc(&d_hitDetections, HEIGHT * sizeof(HitDetection));
     cudaMalloc(&d_triangle, sizeof(triangle));
 
-    cudaMemcpy(d_rays, rayRow, HEIGHT * sizeof(Ray), cudaMemcpyHostToDevice);
-    cudaMemcpy(hitDetections, d_hitDetections, sizeof(hitDetections), cudaMemcpyDeviceToHost);
-    cudaMemcpy(d_triangle, &triangle, sizeof(triangle), cudaMemcpyHostToDevice);
+    cudaMemcpy(
+        d_rays,
+        rayRow,
+        HEIGHT * sizeof(Ray),
+        cudaMemcpyHostToDevice
+    );
+    cudaMemcpy(
+        hitDetections,
+        d_hitDetections,
+        HEIGHT * sizeof(HitDetection),
+        cudaMemcpyDeviceToHost
+    );
+    cudaMemcpy(
+        d_triangle,
+        &triangle,
+        sizeof(triangle),
+        cudaMemcpyHostToDevice
+    );
 
-    _processRow <<<1, WIDTH >>> (d_rays, d_triangle, d_hitDetections);
+    _processColumn <<<1, HEIGHT>>> (d_rays, d_triangle, d_hitDetections);
 
     cudaDeviceSynchronize();
 
-    cudaMemcpy(hitDetections, d_hitDetections, sizeof(hitDetections), cudaMemcpyDeviceToHost);
+    cudaMemcpy(hitDetections, d_hitDetections, HEIGHT * sizeof(HitDetection), cudaMemcpyDeviceToHost);
+    
     cudaFree(d_rays);
     cudaFree(d_hitDetections);
     cudaFree(d_triangle);
 
     return hitDetections;
+}
+
+void freeHitDetectionColumn(HitDetection* hitDetections)
+{
+	delete[] hitDetections;
 }
 
 int main()
@@ -106,8 +123,9 @@ int main()
 
         for (int x = 0; x < WIDTH; x++)
         {
-            HitDetection* hd = processRow(rays, triangle, x);
+            HitDetection* hd = processColumn(rays, triangle, x);
             renderRow(hd, x, screenSurface);
+            freeHitDetectionColumn(hd);
             SDL_UpdateWindowSurface(window);
         }
 
